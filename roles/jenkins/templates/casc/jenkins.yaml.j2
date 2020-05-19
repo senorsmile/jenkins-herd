@@ -1,0 +1,129 @@
+jenkins:
+  systemMessage: "{{ casc_systemMessage | default('Default system message - provisioned by Ansible ') }}"
+
+{% if casc_rbac_enabled is defined and casc_rbac_enabled == true %}
+  authorizationStrategy:
+    roleBased:
+      roles:
+{# -- #}{% if casc_rbac_global is defined and casc_rbac_global is iterable and casc_rbac_global is not string %}
+        global:
+{# ---- #}{% for global_item in casc_rbac_global %}
+          - {{ global_item | to_json }}
+{# ---- #}{% endfor %}{# global_item in casc_rbac_global #}
+{# -- #}{% endif %}{# casc_rbac_global is defined #}
+{# -- #}{% if casc_rbac_folder is defined and casc_rbac_folder is iterable and casc_rbac_folder is not string %}
+        items:
+{# ---- #}{% for folder_item in casc_rbac_folder %}
+          - {{ folder_item | to_json }}
+{# ---- #}{% endfor %}{# folder_item in casc_rbac_folder #}
+{# -- #}{% endif %}{# casc_rbac_folder is defined #}
+{% endif %}{# casc_rbac_enabled is defined and casc_rbac_enabled == true #}
+
+
+{% if casc_matrixauth_enabled is defined and casc_matrixauth_enabled == true %}
+  authorizationStrategy:
+    projectMatrix:
+      permissions: {% if casc_matrixauth_settings is defined %}{{ casc_matrixauth_settings | to_json }}
+{% else %}
+        - "Overall/Administer:admin"
+        - "Overall/Read:user1"
+{% endif %}{#casc_matrixauth_settings is defined #}
+{% endif %}{#casc_matrixauth_enabled is defined and casc_matrixauth_enabled == true #}
+
+{% if casc_active_directory_enabled == true %}
+{% if casc_active_directory is defined and casc_active_directory is not string %}
+  securityRealm:
+    activeDirectory:
+{#  #}{% if "groupLookupStrategy" in casc_active_directory %}
+      groupLookupStrategy: {{ casc_active_directory["groupLookupStrategy"] }}
+{#  #}{% endif %}
+{#  #}{% if "startTls" in casc_active_directory %}
+      startTls: {{ casc_active_directory["startTls"] }}
+{#  #}{% endif %}
+{#  #}{% if "customDomain" in casc_active_directory %}
+      customDomain: {{ casc_active_directory["customDomain"] }}
+{#  #}{% endif %}
+{#  #}{% if "casc_int_user" in casc_active_directory %}
+      internalUsersDatabase:
+        jenkinsInternalUser: "{{ casc_active_directory["casc_int_user"] }}"
+      cache:
+        size: 1000
+        ttl: 3600
+{#  #}{% endif %}
+{#  #}{% if "tlsConfiguration" in casc_active_directory %}
+      tlsConfiguration: {{ casc_active_directory["tlsConfiguration"] }}
+{#  #}{% endif %}
+{# ---- domains MUST be defined ---- #}
+      domains:
+{# -- #}{% for domain in casc_active_directory["domains"] %}
+        - {{ domain | to_json }}
+{# -- #}{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if casc_local_auth_enabled == true %}
+{% if casc_local_auth is defined and casc_local_auth is not string %}
+  securityRealm:
+    local:
+{#  #}{% if "allowsSignup" in casc_local_auth %}
+      allowsSignup: {{ casc_local_auth["allowsSignup"] }}
+{#  #}{% endif %}
+{# ---- users MUST be defined ---- #}
+      users:
+{# -- #}{% for user in casc_local_auth["users"] %}
+        - {{ user | to_json }}
+{# -- #}{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if casc_credentials is defined %}
+credentials:
+  system:
+    domainCredentials:
+      - credentials: {{ casc_credentials | to_json }}
+{% endif %}
+
+{% if casc_libraries is defined or casc_sonar_config_enabled is defined or casc_github_plugin_enabled is defined or casc_slack_notifier_enabled is defined %}
+unclassified:
+{% endif %}
+{% if casc_libraries is defined %}
+  globalLibraries:
+    libraries: {{ casc_libraries | to_json }}
+{% endif %}
+
+{% if casc_sonar_config_enabled is defined and casc_sonar_config_enabled == true %}
+{% if casc_sonar_config is defined and casc_sonar_config is not string %}
+  sonarglobalconfiguration:
+    buildWrapperEnabled: true
+{# ---- installations MUST be defined ---- #}
+    installations:
+{# -- #}{% for installation in casc_sonar_config["installations"] %}
+      - {{ installation | to_json }}
+{# -- #}{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if casc_github_plugin_enabled is defined and casc_github_plugin_enabled == true %}
+{% if casc_github_plugin is defined and casc_github_plugin is not string %}
+  githubpluginconfig:
+{# ---- configs MUST be defined ---- #}
+    configs:
+{#  #}{% for config in casc_github_plugin["configs"] %}
+    - {{ config | to_json }}
+{#  #}{% endfor %}
+{% endif %}
+{% endif %}
+
+{% if casc_slack_notifier_enable is defined and dcasc_slack_notifier_enabled == true %}
+{% if casc_slack_notifier is defined and casc_slack_notifier is not string %}
+  slackNotifier:
+    teamDomain: {{ casc_slack_notifier["teamDomain"] }}
+    tokenCredentialId: {{ casc_slack_notifier["tokenCredentialId"] }}
+{#  #}{% if "botUser" in casc_slack_notifier %}
+    botUser: {{ casc_slack_notifier["botUser"] }}
+{#  #}{% endif %}
+{#  #}{% if "room" in casc_slack_notifier %}
+    room: {{ casc_slack_notifier["room"] }}
+{#  #}{% endif %}
+{% endif %}
+{% endif %}

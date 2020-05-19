@@ -1,0 +1,6 @@
+---
+- name: Restart Jenkins
+  docker_container: 
+    name: jenkins-master 
+    state: started 
+    restart: yes

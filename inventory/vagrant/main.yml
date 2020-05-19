@@ -1,0 +1,54 @@
+---
+vagrant:
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+    ansible_user: vagrant
+    ansible_become_pass: vagrant
+    ansible_ssh_private_key_file: ".vagrant/machines/{{ inventory_hostname }}/virtualbox/private_key"
+  hosts:
+    vagrant_jenkins01:
+      ansible_host: 192.168.97.101
+      casc_local_auth:
+        allowsSignup: false
+        users:
+          - id: "admin"
+            password: "password"
+          - id: "user1"
+            password: "password"
+          - id: "user2"
+            password: "password"
+          - id: "user3"
+            password: "password"
+      casc_matrixauth_enabled: True
+      casc_matrixauth_settings:
+        - "Overall/Read:user1"
+        - "Overall/Read:user2"
+
+        - "Overall/Administer:admin"
+        - "Overall/Administer:user3"
+
+        - "Agent/Build:user2"
+        - "Agent/Disconnect:user2"
+
+        #- "Job/Build:user2"
+        #- "Job/Cancel:user2"
+        #- "Job/Read:user2"
+        #- "Job/Workspace:user2"
+
+        #- "Lockable Resources/Reserve:user2"
+        #- "Lockable Resources/Unlock:user2"
+        #- "Lockable Resources/View:user2"
+
+        #- "Run/Replay:user2"
+        #- "Run/Update:user2"
+
+        #- "SCM/Tag:user2"
+
+
+        # these seem problematic
+        #- "Credentials/View:user2"
+        #- "View/Read:user2"
+
+jenkins:
+  hosts:
+    vagrant_jenkins01:

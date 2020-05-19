@@ -1,0 +1,42 @@
+- job:
+    name: admin_job
+    project-type: freestyle
+    defaults: global
+    description: 'Do not edit this job through the web!'
+    disabled: false
+    display-name: 'Admin-Job'
+    quiet-period: 5
+    block-downstream: false
+    block-upstream: false
+    retry-count: 3
+    node: master
+    parameters:
+      - choice:
+          name: action
+          choices:
+            - list
+            - update
+            - test
+            - delete
+            - get-plugins-info
+        description: "list to list jobs, delete - specify job name, update/test - name of yaml file"
+      - string:
+          name: yaml_job_name
+          description: "Yaml file name for update/test, Job name for delete, nothing for list/plugins info"
+    builders:
+      - shell: |
+          #!/bin/bash
+          if [[ "$action" == "list" ]]; then
+            jenkins-jobs list;
+          elif [[ "$action" == "update" ]]; then
+            jenkins-jobs update /var/jenkins_jobs/jobs/${yaml_job_name}
+          elif [[ "$action" == "test" ]]; then
+            jenkins-jobs test /var/jenkins_jobs/jobs/${yaml_job_name}
+          elif [[ "$action" == "delete" ]]; then
+            jenkins-jobs delete ${yaml_job_name}
+          elif [[ "$action" == "get-plugins-info" ]]; then
+            jenkins-jobs get-plugins-info > /tmp/plugin-info; echo "****";
+            cat /tmp/plugin-info;
+            echo "****";
+          fi
+

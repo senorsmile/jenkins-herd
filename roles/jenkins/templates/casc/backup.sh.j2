@@ -1,0 +1,17 @@
+#!/bin/bash
+set -euo pipefail
+
+echo "Creating Backup"
+docker run --rm --volumes-from "{{ jenkins_data_volume_container }}" -v "{{ jenkins_host_mount_backups }}":/var/jenkins_home busybox tar cvf "{{ jenkins_home_jobs }}"_$(date +%F-%T).tar "{{ jenkins_home_jobs }}"
+
+echo "Removing files older than "{{ jenkins_backup_period }}" days"
+find "{{ jenkins_host_mount_backups }}" -mtime +"{{ jenkins_backup_period }}" -exec rm -f {} \;
+
+: '
+Sample steps in case a new jenkins data volume has to be created but the volume or Job history has to be restored from a backup TAR file:
+
+create a new data container
+$ sudo docker create -v /var/jenkins_home/jobs --name "{{ jenkins_data_volume_container }}"-new busybox true
+untar the backup files into the new container᾿s data volume
+$ sudo docker run --rm --volumes-from "{{ jenkins_data_volume_container }}"-new -v /jobs-history:/var/jenkins_home busybox tar xvf /${jenkins_home_jobs}.tar ${jenkins_home_jobs}
+'

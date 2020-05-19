@@ -1,0 +1,116 @@
+---
+- name: Install netcat (for testing)
+  yum:
+    name: nmap-ncat
+    state: installed
+  when: (
+      ansible_distribution == 'CentOS'
+      and
+      ansible_distribution_major_version == '7'
+    )
+
+- include: docker_build.yml
+  tags: docker_build
+  when: jenkins_docker_build == True
+
+- include: docker_data_build.yml
+  tags: docker_data_build
+  when: jenkins_docker_data_build == True
+
+- name: Create jenkins casc config dir on docker host
+  file:
+    state: directory
+    path: /etc/jenkins_config/casc_configs/
+    owner: '1000'
+    group: '1000'
+  notify:
+    - Restart Jenkins
+
+- name: Create scripts directory on docker host
+  file:
+    state: directory
+    path: /etc/jenkins_config/scripts
+    owner: '1000'
+    group: '1000'
+
+- name: Create jenkins jobs history dir on docker host
+  file:
+    state: directory
+    path: "{{ jenkins_host_mount_backups }}"
+    owner: '1000'
+    group: '1000'
+  notify:
+    - Restart Jenkins
+
+- name: Copy jenkins CASC template
+  template:
+    src: "casc/jenkins.yaml.j2"
+    dest: "/etc/jenkins_config/casc_configs/jenkins.yaml"
+    owner: '1000'
+    group: '1000'
+  notify:
+    - Restart Jenkins
+  tags: jenkins_casc_template
+
+- name: Copy jenkins jobs backup script
+  template:
+    src: "casc/backup.sh.j2"
+    dest: "/etc/jenkins_config/scripts/backup.sh"
+    mode: '1777'
+- name: Jenkins Jobs data Container
+  become: true
+  docker_container:
+    name: "{{ jenkins_data_volume_container }}"
+    image: "{{ jenkins_data_container_docker_image }}"
+    state: present
+    volumes:
+      - "{{ jenkins_home_jobs }}"           # /var/jenkins_home/jobs
+      - /etc/jenkins_jobs:/var/jenkins_jobs
+  notify:
+    - Restart Jenkins
+  tags: jenkins_data_container
+
+- name: Start Jenkins Docker container
+  become: true
+  docker_container:
+    name: jenkins-master
+    image: "{{ jenkins_docker_image }}"
+    state: started
+    keep_volumes: yes
+    ports:
+      - "8080:8080"
+    restart_policy: on-failure
+    volumes:
+      - /etc/jenkins_config/casc_configs:/var/jenkins_home/casc_configs
+    volumes_from:
+      - jenkins-jobs
+    #env:
+    #    "{{ secrets }}"
+
+- name: Force all notified handlers to run at this point
+  meta: flush_handlers
+
+- name: TEST that jenkins is up
+  shell: >
+    nc -vz localhost 8080
+  retries: 30
+  delay: 5
+  register: netcat_jenkins
+  until: netcat_jenkins is success
+  changed_when: False
+
+- name: Jenkins Jobs History backups. Creates an entry like "00 00 * * * /etc/jenkins_config/scripts/backup.sh"
+  cron:
+    name: "Jobs history backups"
+    minute: "00"
+    hour: "00"
+    job: "/etc/jenkins_config/scripts/backup.sh"
+    state: present
+    disabled: "{{ jenkins_disable_backups }}"
+  tags: jobs-backup
+
+- include: jenkins_job_builder.yml
+  tags:
+    - jenkins_job_builder
+    - jenkins_jobs
+    - jjb

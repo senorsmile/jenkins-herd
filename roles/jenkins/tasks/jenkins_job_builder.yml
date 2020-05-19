@@ -1,0 +1,82 @@
+---
+- name: Pip install jenkins-job-builder
+  pip:
+    name: jenkins-job-builder
+  become: true
+  notify:
+    - Restart Jenkins
+
+- name: Create JJB dir on docker host
+  file:
+    state: directory
+    path: /etc/jenkins_jobs/jobs
+    owner: '1000'
+    group: '1000'
+  notify:
+    - Restart Jenkins
+
+- name: Copy jenkins jobs builder ini file
+  template:
+    src: "jenkins_job_builder/jenkins_jobs.ini.j2"
+    dest: "/etc/jenkins_jobs/jenkins_jobs.ini"
+    owner: '1000'
+    group: '1000'
+  notify:
+    - Restart Jenkins
+
+- name: Populate sample jenkins job (called admin)
+  template:
+    src: "jenkins_job_builder/admin.yml.j2"
+    dest: "/etc/jenkins_jobs/jobs/admin.yml"
+    owner: '1000'
+    group: '1000'
+
+#- name: Populate jenkins jobs
+
+- name: Force all notified handlers to run now
+  meta: flush_handlers
+
+- name: DEBUG jenkins UI
+  debug:
+    msg: |
+      Jenkins should now be ready at {{ jenkins_url }}
+
+- name: test Jenkins UI is up
+  uri:
+    url: "{{ jenkins_url }}/login"
+    force_basic_auth: yes
+    url_username: "{{ jenkins_admin_user }}"
+    url_password: "{{ jenkins_admin_password }}"
+    return_content: yes
+  retries: 30
+  delay: 5
+  register: result
+  until: "'200' in result.content"
+  changed_when: False
+
+- name: Update Jenkins-Jobs on Jenkins Master - docker container
+  #command: /etc/jenkins_jobs/jenkins_jobs_builder.sh
+  command: |
+    docker exec jenkins-master bash -c '
+        cd /var/jenkins_jobs/; 
+        jenkins-jobs --conf ./jenkins_jobs.ini update ./jobs/
+    '
+  register: jjb_update
+  changed_when: 
+    - ((jjb_update.stderr_lines | regex_replace('.*jobs updated.\\s+(\\d+).*', '\\1')) != '0' )
+
+- name: Number of jobs updated
+  debug:
+    msg: |
+      {{ jjb_update.stderr_lines | regex_replace('.*jobs updated.\s+(\d+).*', '\1') }}
+
+- name: Number of views updated
+  debug:
+    msg: |
+      {{ jjb_update.stderr_lines | regex_replace('.*views updated.\s+(\d+).*', '\1') }}
+
+- name: Notify that jenkins is ready
+  debug:
+    msg: |
+      Jenkins is now ready at {{ jenkins_url }}
+

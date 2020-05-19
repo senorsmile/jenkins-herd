@@ -1,0 +1,6 @@
+[submodule "external/ansible-runner-scripts2"]
+	path = external/ansible-runner-scripts2
+	url = https://github.com/senorsmile/ansible-runner-scripts2.git
+[submodule "external/geerlingguy.docker"]
+	path = external/geerlingguy.docker
+	url = https://github.com/geerlingguy/ansible-role-docker.git

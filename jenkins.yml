@@ -1,0 +1,21 @@
+---
+- hosts: 
+    - jenkins
+  gather_facts: False # because we manually gather them after verifying host ssh
+  become: True
+  pre_tasks:
+    - name: Wait for system to become reachable over ssh
+      wait_for_connection:
+            timeout: 900
+      tags: wait
+
+    - name: Gather facts
+      setup:
+      tags: always
+
+  roles: 
+    - role: geerlingguy.docker
+      tags: docker
+
+    - role: jenkins
+      tags: jenkins

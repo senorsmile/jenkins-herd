@@ -1,0 +1,45 @@
+---
+- name: Apt install python3-pip
+  apt:
+    name: python3-pip
+    state: present
+
+- name: Pip install docker-py
+  pip:
+    name: docker-py
+  become: true
+
+- name: Make dir
+  file:
+    state: directory
+    path: "/root/{{ docker_build_dockerfile.name }}/"
+
+- name: Copy Dockerfiles et al
+  template:
+    src:  "docker_build/{{ item }}.j2"
+    dest: "/root/{{ docker_build_dockerfile.name }}/{{ item }}"
+  loop:
+    - Dockerfile
+    - plugins.txt
+  register: docker_files
+
+- name: Check for image
+  args:
+    executable: /bin/bash
+  shell: >
+    docker images | perl -lane 'if (/{{ docker_build_dockerfile.name }}.*{{ docker_build_dockerfile.ver | default("latest") }}/) { $C++ }; END { if ($C > 0) { print "Image found\n" } else { print "IMAGE NOT FOUND\n" }}'
+  register: check_for_image
+  failed_when: check_for_image.stdout.find('NOT FOUND') != -1
+  changed_when: False
+  ignore_errors: True
+
+- name: Build image
+  args:
+    executable: /bin/bash
+    chdir: "/root/{{ docker_build_dockerfile.name }}/"
+  shell: >
+    docker build -t "{{ docker_build_dockerfile.name }}:{{ docker_build_dockerfile.ver | default('latest') }}" -t "{{ docker_build_dockerfile.name}}:latest" . 
+  when:
+    check_for_image is failed
+    or
+    docker_files is changed

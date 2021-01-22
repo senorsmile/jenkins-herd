@@ -42,6 +42,9 @@
       Jenkins should now be ready at {{ jenkins_url }}
 
 - name: Test that Jenkins UI reachable from this ansible runner
+  connection: local
+  delegate_to: localhost
+  become: no
   uri:
     url: "{{ jenkins_url }}/login"
     force_basic_auth: yes

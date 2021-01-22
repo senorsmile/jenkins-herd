@@ -41,7 +41,7 @@
     msg: |
       Jenkins should now be ready at {{ jenkins_url }}
 
-- name: test Jenkins UI is up
+- name: Test that Jenkins UI reachable from this ansible runner
   uri:
     url: "{{ jenkins_url }}/login"
     force_basic_auth: yes

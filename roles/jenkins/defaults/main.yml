@@ -2,7 +2,6 @@
 jenkins_docker_build:      True # do not build the image on docker host
 jenkins_docker_data_build: True # do not build the image on docker host
 
-#jenkins_url: 'http://192.168.97.101:8080'
 jenkins_url: "http://{{ ansible_host }}:8080"
 jenkins_admin_user: 'admin'
 jenkins_admin_password: 'password'
@@ -10,8 +9,10 @@ test_jenkins_ui_admin_login: True
 
 
 ## https://hub.docker.com/r/jenkins/jenkins/tags
-#jenkins_ver: 2.150.3 # version of upstream container to base off of
-jenkins_ver: 2.190.3 # version of upstream container to base off of
+## version of upstream container to base off of
+#jenkins_ver: 2.150.3
+#jenkins_ver: 2.190.3 
+jenkins_ver: 2.263.2
 jenkins_ver_build: '1'
 
 jenkins_data_container_ver: '1.29.3' # version of upstream busybox image
@@ -67,17 +68,11 @@ casc_local_auth:
 
 #casc_sonar_config_enabled: False
 
+# default bare minimum plugin set
 casc_plugins: |
-    #blueocean:1.16.0
-    blueocean:1.21.0
-    bouncycastle-api:2.17 # needed as a dep for other things?
-    credentials-binding:1.20
-    command-launcher:1.3 # needed as a dep for other things?
-    configuration-as-code:1.34
-    git:4.0.0
+    credentials-binding:1.24
+    command-launcher:1.5
+    configuration-as-code:1.46
+    git:4.5.2
     jdk-tool:1.4
-    job-dsl:1.76
-    matrix-auth:2.5
-    #pipeline-maven:3.6.11
-    workflow-aggregator:2.6
-    workflow-job:2.36
+    matrix-auth:2.6.5

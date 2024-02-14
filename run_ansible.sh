@@ -3,7 +3,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-SITEFILE="${SITEFILE:-${SCRIPT_DIR}/site.yml}"
+SITEFILE="${SITEFILE:-${SCRIPT_DIR}/jenkins.yml}"
 GIT_EXIT_IF_CHANGES="${GIT_EXIT_IF_CHANGES:-yes}"
 
 opts=(

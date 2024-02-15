@@ -1,3 +1,4 @@
+#jinja2: lstrip_blocks: "True"
 jenkins:
   systemMessage: "{{ casc_systemMessage | default('Default system message - provisioned by Ansible ') }}"
 
@@ -21,6 +22,7 @@ jenkins:
 
 
 {% if casc_matrixauth_enabled is defined and casc_matrixauth_enabled == true %}
+  {# -- https://github.com/jenkinsci/configuration-as-code-plugin/blob/fdf7b7b28421092b770859f998caee0636bcec65/demos/global-matrix-auth/README.md -- #}
   authorizationStrategy:
     projectMatrix:
       permissions: {% if casc_matrixauth_settings is defined %}{{ casc_matrixauth_settings | to_json }}
@@ -30,9 +32,15 @@ jenkins:
 {% endif %}{#casc_matrixauth_settings is defined #}
 {% endif %}{#casc_matrixauth_enabled is defined and casc_matrixauth_enabled == true #}
 
-{% if casc_active_directory_enabled == true %}
-{% if casc_active_directory is defined and casc_active_directory is not string %}
+{% if casc_active_directory is defined
+   or casc_local_auth is defined
+   or casc_saml is defined
+%}
   securityRealm:
+  {# ---------------------- #}
+  {# -- Active Directory -- #}
+  {# ---------------------- #}
+{% if casc_active_directory | default('', true) | trim != '' %}{# test not empty #}
     activeDirectory:
 {#  #}{% if "groupLookupStrategy" in casc_active_directory %}
       groupLookupStrategy: {{ casc_active_directory["groupLookupStrategy"] }}
@@ -58,12 +66,12 @@ jenkins:
 {# -- #}{% for domain in casc_active_directory["domains"] %}
         - {{ domain | to_json }}
 {# -- #}{% endfor %}
-{% endif %}
-{% endif %}
 
-{% if casc_local_auth_enabled == true %}
-{% if casc_local_auth is defined and casc_local_auth is not string %}
-  securityRealm:
+{% endif %}
+  {# ---------------- #}
+  {# -- local auth -- #}
+  {# ---------------- #}
+{% if casc_local_auth | default('', true) | trim != '' %}{# test not empty #}
     local:
 {#  #}{% if "allowsSignup" in casc_local_auth %}
       allowsSignup: {{ casc_local_auth["allowsSignup"] }}
@@ -74,8 +82,37 @@ jenkins:
         - {{ user | to_json }}
 {# -- #}{% endfor %}
 {% endif %}
+
+  {# ---------------- #}
+  {# --    saml    -- #}
+  {# ---------------- #}
+{% if casc_saml | default('', true) | trim != '' %}{# test not empty #}
+    saml:
+      # advancedConfiguration appears to not be necessary
+      #advancedConfiguration:
+      #  forceAuthn: false
+      #  spEntityId: "{{ jenkins_url }}"
+      binding: "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+      displayNameAttributeName: "{{ casc_saml.displayNameAttrname | default('http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name') }}"
+      idpMetadataConfiguration:
+        period: 0
+        {# you can only do one of url OR xml, not both #}
+        {% if casc_saml.xml is not defined %} 
+        url: "{{ casc_saml.url }}" 
+        {% endif %}
+        {% if casc_saml.url is not defined %} 
+        xml: "{{ casc_saml.xml }}" 
+        {% endif %}
+      logoutUrl: "{{ casc_saml.logoutUrl }}"
+      maximumAuthenticationLifetime: 86400
+      groupsAttributeName: "{{ casc_saml.groupAttrName | default('http://schemas.xmlsoap.org/claims/Group') }}"
+      usernameAttributeName: "{{ casc_saml.usernameAttr | default('Username') }}"
+      emailAttributeName: "{{ casc_saml.emailAttrName | default('emailAddress') }}"
+      usernameCaseConversion: "lowercase"
+
 {% endif %}
 
+{% endif %}
 {% if casc_credentials is defined %}
 credentials:
   system:

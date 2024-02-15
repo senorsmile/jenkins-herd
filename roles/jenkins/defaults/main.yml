@@ -12,7 +12,8 @@ test_jenkins_ui_admin_login: True
 ## version of upstream container to base off of
 #jenkins_ver: 2.150.3
 #jenkins_ver: 2.190.3 
-jenkins_ver: 2.263.2
+#jenkins_ver: 2.263.2
+jenkins_ver: 2.445
 jenkins_ver_build: '1'
 
 jenkins_data_container_ver: '1.29.3' # version of upstream busybox image
@@ -35,14 +36,12 @@ docker_build_dockerfile:
   contents: |
       FROM jenkins/jenkins:{{ jenkins_ver }}
       ADD plugins.txt /plugins.txt
-      RUN /usr/local/bin/install-plugins.sh </plugins.txt
+      #RUN /usr/local/bin/install-plugins.sh </plugins.txt
+      RUN jenkins-plugin-cli --plugin-file /plugins.txt # as of 2.346.2
       ENV CASC_JENKINS_CONFIG /var/jenkins_home/casc_configs/jenkins.yaml
       ENV JAVA_OPTS -Djenkins.install.runSetupWizard=false
       USER root
-      RUN apt-get update && apt-get install -y \
-          vim \
-          python3-pip
-      RUN pip3 install jenkins-job-builder
+      RUN apt-get update && apt-get install -y jenkins-job-builder
 
 docker_data_container_build_dockerfile:
   name: jenkins_data_container
@@ -69,10 +68,17 @@ casc_local_auth:
 #casc_sonar_config_enabled: False
 
 # default bare minimum plugin set
+#casc_plugins: |
+#    credentials-binding:1.24
+#    command-launcher:1.5
+#    configuration-as-code:1.46
+#    git:4.5.2
+#    jdk-tool:1.4
+#    matrix-auth:2.6.5
 casc_plugins: |
-    credentials-binding:1.24
-    command-launcher:1.5
-    configuration-as-code:1.46
-    git:4.5.2
-    jdk-tool:1.4
-    matrix-auth:2.6.5
+    credentials-binding
+    command-launcher
+    configuration-as-code
+    git
+    jdk-tool
+    matrix-auth

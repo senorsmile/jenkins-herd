@@ -4,10 +4,12 @@ vagrant:
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
     ansible_user: vagrant
     ansible_become_pass: vagrant
-    ansible_ssh_private_key_file: ".vagrant/machines/{{ inventory_hostname }}/virtualbox/private_key"
+    #ansible_ssh_private_key_file: ".vagrant/machines/{{ inventory_hostname }}/virtualbox/private_key"
+    ansible_ssh_private_key_file: ".vagrant/machines/{{ inventory_hostname }}/libvirt/private_key"
   hosts:
     vagrant_jenkins01:
-      ansible_host: 192.168.97.101
+      #ansible_host: 192.168.97.101
+      ansible_host: "{{ hostvars['localhost']['vagrant_jenkins01_ip'] }}"
       casc_local_auth:
         allowsSignup: false
         users:

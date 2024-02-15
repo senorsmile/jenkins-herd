@@ -5,10 +5,14 @@ set -euo pipefail
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 SITEFILE="${SITEFILE:-${SCRIPT_DIR}/jenkins.yml}"
 GIT_EXIT_IF_CHANGES="${GIT_EXIT_IF_CHANGES:-yes}"
+if [[ -n ${ANSIBLE_INVENTORY_MORE} ]]; then
+  additional_inventory="${ANSIBLE_INVENTORY_MORE}"
+fi
 
 opts=(
   ansible-playbook          # must be first
   -i "${SCRIPT_DIR}/inventory/"
+  -i "${additional_inventory}"
   --become
   --diff
   #--vault-password-file ./.ansible_vault.txt

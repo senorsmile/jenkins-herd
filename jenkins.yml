@@ -1,19 +1,35 @@
 ---
-- hosts: 
+- hosts:
+    - localhost
+  connection: local
+  gather_facts: False
+  become: False
+  pre_tasks:
+    - name: Get primary private ip of node
+      shell: |
+        vagrant ssh vagrant_jenkins01 -c "ip -o route get to 8.8.8.8 | sed -n 's/.*src \([0-9.]\+\).*/\1/p'"
+      register: primary_ip
+      changed_when: False
+      check_mode: no # no = always run, even in check mode
+
+    - set_fact:
+        vagrant_jenkins01_ip: "{{ primary_ip.stdout }}"
+
+- hosts:
     - jenkins
   gather_facts: False # because we manually gather them after verifying host ssh
   become: True
   pre_tasks:
-    - name: Wait for system to become reachable over ssh
-      wait_for_connection:
-            timeout: 900
-      tags: wait
+    #- name: Wait for system to become reachable over ssh
+    #  wait_for_connection:
+    #        timeout: 900
+    #  tags: wait
 
     - name: Gather facts
       setup:
       tags: always
 
-  roles: 
+  roles:
     - role: geerlingguy.docker
       tags: docker
 
